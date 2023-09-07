@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  go:
+    image: golang:latest
+    container_name: go
+    volumes:
+      - .:/go/src/app
+    working_dir: /go/src/app
+    command: sh -c "go mod tidy && cd server && go run main.go"
+    ports:
+      - 8080:8080
+    depends_on:
+      - mysql
+    networks:
+      - bun_practice
+
+  mysql:
+    image: mysql:8.0
+    container_name: db
+    restart: always
+    env_file:
+      - .env
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - bun_practice
+
+volumes:
+  db_data:
+
+networks:
+  bun_practice:
+    external: true
