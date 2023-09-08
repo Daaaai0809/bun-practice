@@ -25,7 +25,7 @@ func (r *UserRepository) FindAll(ctx context.Context) ([]entity.User, error) {
 	tx, _ := r.Conn.Begin()
 
 	var users []entity.User
-	if err := tx.NewSelect().Model(&users).Scan(ctx); err != nil {
+	if err := tx.NewSelect().Model(&users).Relation("Posts").Scan(ctx); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (r *UserRepository) FindById(ctx context.Context, id int64) (*entity.User, 
 	tx, _ := r.Conn.Begin()
 
 	var user entity.User
-	if err := tx.NewSelect().Model(&user).Where("id = ?", id).Scan(ctx); err != nil {
+	if err := tx.NewSelect().Model(&user).Where("id = ?", id).Relation("Posts").Scan(ctx); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (r *UserRepository) Delete(ctx context.Context, id int64) error {
 
 	tx, _ := r.Conn.Begin()
 
-	_, err := tx.NewDelete().Model(&entity.User{}).Where("id = ?", id).Exec(ctx)
+	_, err := tx.NewDelete().Model((*entity.User)(nil)).Where("id = ?", id).Exec(ctx)
 	if err != nil {
 		tx.Rollback()
 		return err
