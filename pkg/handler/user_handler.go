@@ -76,6 +76,8 @@ func (handler *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println(newUser)
+
 	if err := handler.userInteractor.Create(r.Context(), newUser); err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)

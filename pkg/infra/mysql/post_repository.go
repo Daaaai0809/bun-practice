@@ -63,7 +63,7 @@ func (r *PostRepository) Create(ctx context.Context, post *entity.Post) error {
 
 	tx, _ := r.Conn.Begin()
 
-	_, err := tx.NewInsert().Model(post).Exec(ctx)
+	_, err := tx.NewInsert().Model(post).Table("users").Exec(ctx)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -82,7 +82,7 @@ func (r *PostRepository) Update(ctx context.Context, post *entity.Post) error {
 
 	tx, _ := r.Conn.Begin()
 
-	_, err := tx.NewUpdate().Model(post).Where("id = ?", post.ID).Exec(ctx)
+	_, err := tx.NewUpdate().Model(post).Table("users").Where("id = ?", post.ID).Exec(ctx)
 	if err != nil {
 		tx.Rollback()
 		return err
