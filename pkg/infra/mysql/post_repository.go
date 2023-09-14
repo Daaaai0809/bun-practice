@@ -86,6 +86,7 @@ func (r *PostRepository) Create(ctx context.Context, post *entity.Post, tagIds [
 			return err
 		}
 	}
+	
 	if err := tx.Commit(); err != nil {
 		return err
 	}
