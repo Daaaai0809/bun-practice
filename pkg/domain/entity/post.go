@@ -11,5 +11,5 @@ type Post struct {
 	Tags      []*Tag   `bun:"m2m:post_tags,join:Post=Tag" json:"tags"`
 	CreatedAt time.Time `bun:"created_at,default:current_timestamp"`
 	UpdatedAt time.Time `bun:"updated_at,default:current_timestamp"`
-	UserId    int64 `bun:"user_id"`
+	UserID    int64 `bun:"user_id"`
 }

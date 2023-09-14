@@ -94,6 +94,7 @@ func (handler *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 	newPost := &entity.Post{
 		Title: postCreateRequest.Title,
 		Body: postCreateRequest.Body,
+		UserID: postCreateRequest.UserId,
 	}
 
 	log.Println(newPost)
@@ -120,6 +121,7 @@ func (handler *PostHandler) Update(w http.ResponseWriter, r *http.Request) {
 		ID: postUpdateRequest.ID,
 		Title: postUpdateRequest.Title,
 		Body: postUpdateRequest.Body,
+		UserID: postUpdateRequest.UserId,
 	}
 
 	if err := handler.postInteractor.Update(r.Context(), post, postUpdateRequest.TagIds); err != nil {

@@ -114,10 +114,13 @@ func (r *PostRepository) Update(ctx context.Context, post *entity.Post, tagIds [
 			})
 		}
 
-		vals := tx.NewValues(&rels)
+		_, err := tx.NewDelete().Model((*entity.PostTags)(nil)).Where("post_id = ?", post.ID).Exec(ctx)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 
-		// Many2Many relation by bulk update
-		_, err = tx.NewUpdate().With("post_tags", vals).Model((*entity.PostTags)(nil)).Set("post_id = ?", "_data.post_id").Set("tag_id = ?", "_data.tag_id").Where("post_id = ?", "_data.post_id").Where("tag_id = ?", "_data.tag_id").Exec(ctx)
+		_, err = tx.NewInsert().Model(&rels).Exec(ctx)
 		if err != nil {
 			tx.Rollback()
 			return err
