@@ -10,8 +10,8 @@ import (
 type IPostInteractor interface {
 	FindAll(ctx context.Context) ([]entity.Post, error)
 	FindById(ctx context.Context, id int64) (*entity.Post, error)
-	Create(ctx context.Context, post *entity.Post) error
-	Update(ctx context.Context, post *entity.Post) error
+	Create(ctx context.Context, post *entity.Post, tagIds []int64) error
+	Update(ctx context.Context, post *entity.Post, tagIds []int64) error
 	Delete(ctx context.Context, id int64) error
 }
 
@@ -33,12 +33,12 @@ func (interactor *PostInteractor) FindById(ctx context.Context, id int64) (*enti
 	return interactor.postRepository.FindById(ctx, id)
 }
 
-func (interactor *PostInteractor) Create(ctx context.Context, post *entity.Post) error {
-	return interactor.postRepository.Create(ctx, post)
+func (interactor *PostInteractor) Create(ctx context.Context, post *entity.Post, tagIds []int64) error {
+	return interactor.postRepository.Create(ctx, post, tagIds)
 }
 
-func (interactor *PostInteractor) Update(ctx context.Context, post *entity.Post) error {
-	return interactor.postRepository.Update(ctx, post)
+func (interactor *PostInteractor) Update(ctx context.Context, post *entity.Post, tagIds []int64) error {
+	return interactor.postRepository.Update(ctx, post, tagIds)
 }
 
 func (interactor *PostInteractor) Delete(ctx context.Context, id int64) error {

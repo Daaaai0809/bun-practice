@@ -59,6 +59,11 @@ func run() int {
 	bunDB := bun.NewDB(db, mysqldialect.New())
 	bunDB.SetMaxOpenConns(10)
 	bunDB.SetMaxIdleConns(10)
+	_, err = bunDB.NewCreateTable().Model((*entity.PostTags)(nil)).IfNotExists().Exec(ctx)
+	if err != nil {
+		log.Println(err)
+		return 1
+	}
 	_, err = bunDB.NewCreateTable().Model((*entity.User)(nil)).IfNotExists().Exec(ctx)
 	if err != nil {
 		log.Println(err)
@@ -69,25 +74,38 @@ func run() int {
 		log.Println(err)
 		return 1
 	}
+	_, err = bunDB.NewCreateTable().Model((*entity.Tag)(nil)).IfNotExists().Exec(ctx)
+	if err != nil {
+		log.Println(err)
+		return 1
+	}
 
 	userRepository := repository.NewUserRepository(bunDB)
 	postRepository := repository.NewPostRepository(bunDB)
+	tagRepository := repository.NewTagRepository(bunDB)
 	userInteractor := interactor.NewUserInteractor(userRepository)
 	postInteractor := interactor.NewPostInteractor(postRepository)
+	tagInteractor := interactor.NewTagInteractor(tagRepository)
 	userHandler := handler.NewUserHandler(userInteractor)
 	postHandler := handler.NewPostHandler(postInteractor)
+	tagHandler := handler.NewTagHandler(tagInteractor)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/users", userHandler.Index)
 	mux.HandleFunc("/users/", userHandler.Show)
 	mux.HandleFunc("/users/create", userHandler.Create)
 	mux.HandleFunc("/users/update", userHandler.Update)
-	mux.HandleFunc("/users/delete", userHandler.Delete)
+	mux.HandleFunc("/users/delete/", userHandler.Delete)
 	mux.HandleFunc("/posts", postHandler.Index)
 	mux.HandleFunc("/posts/", postHandler.Show)
 	mux.HandleFunc("/posts/create", postHandler.Create)
 	mux.HandleFunc("/posts/update", postHandler.Update)
-	mux.HandleFunc("/posts/delete", postHandler.Delete)
+	mux.HandleFunc("/posts/delete/", postHandler.Delete)
+	mux.HandleFunc("/tags", tagHandler.Index)
+	mux.HandleFunc("/tags/", tagHandler.Show)
+	mux.HandleFunc("/tags/create", tagHandler.Create)
+	mux.HandleFunc("/tags/update", tagHandler.Update)
+	mux.HandleFunc("/tags/delete/", tagHandler.Delete)
 	
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		log.Println(err)

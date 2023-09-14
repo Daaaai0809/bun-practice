@@ -10,6 +10,21 @@ import (
 	interactor "github.com/Daaaai0809/bun_prac/pkg/usecase"
 )
 
+type PostCreateRequest struct {
+	Title string `json:"title"`
+	Body string `json:"body"`
+	TagIds []int64 `json:"tag_ids"`
+	UserId int64 `json:"user_id"`
+}
+
+type PostUpdateRequest struct {
+	ID int64 `json:"id"`
+	Title string `json:"title"`
+	Body string `json:"body"`
+	TagIds []int64 `json:"tag_ids"`
+	UserId int64 `json:"user_id"`
+}
+
 type PostHandler struct {
 	postInteractor interactor.IPostInteractor
 }
@@ -68,17 +83,22 @@ func (handler *PostHandler) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
-	newPost := &entity.Post{}
+	var postCreateRequest PostCreateRequest
 
-	if err := json.NewDecoder(r.Body).Decode(newPost); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&postCreateRequest); err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	newPost := &entity.Post{
+		Title: postCreateRequest.Title,
+		Body: postCreateRequest.Body,
+	}
+
 	log.Println(newPost)
 
-	if err := handler.postInteractor.Create(r.Context(), newPost); err != nil {
+	if err := handler.postInteractor.Create(r.Context(), newPost, postCreateRequest.TagIds); err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -88,15 +108,21 @@ func (handler *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler *PostHandler) Update(w http.ResponseWriter, r *http.Request) {
-	post := &entity.Post{}
+	var postUpdateRequest PostUpdateRequest
 
-	if err := json.NewDecoder(r.Body).Decode(post); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&postUpdateRequest); err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := handler.postInteractor.Update(r.Context(), post); err != nil {
+	post := &entity.Post{
+		ID: postUpdateRequest.ID,
+		Title: postUpdateRequest.Title,
+		Body: postUpdateRequest.Body,
+	}
+
+	if err := handler.postInteractor.Update(r.Context(), post, postUpdateRequest.TagIds); err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

@@ -26,7 +26,7 @@ func (r *PostRepository) FindAll(ctx context.Context) ([]entity.Post, error) {
 	tx, _ := r.Conn.Begin()
 
 	var posts []entity.Post
-	if err := tx.NewSelect().Model(&posts).Scan(ctx); err != nil {
+	if err := tx.NewSelect().Model(&posts).Relation("Tags").Scan(ctx); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (r *PostRepository) FindById(ctx context.Context, id int64) (*entity.Post, 
 	tx, _ := r.Conn.Begin()
 
 	var post entity.Post
-	if err := tx.NewSelect().Model(&post).Where("id = ?", id).Scan(ctx); err != nil {
+	if err := tx.NewSelect().Model(&post).Relation("Tags").Where("id = ?", id).Scan(ctx); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (r *PostRepository) FindById(ctx context.Context, id int64) (*entity.Post, 
 	return &post, nil
 }
 
-func (r *PostRepository) Create(ctx context.Context, post *entity.Post) error {
+func (r *PostRepository) Create(ctx context.Context, post *entity.Post, tagIds []int64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -69,6 +69,23 @@ func (r *PostRepository) Create(ctx context.Context, post *entity.Post) error {
 		return err
 	}
 
+	if len(tagIds) > 0 {
+		rels := make([]entity.PostTags, 0, len(tagIds))
+
+		for _, tagId := range tagIds {
+			rels = append(rels, entity.PostTags{
+				PostId: post.ID,
+				TagId:  tagId,
+			})
+		}
+
+		// Many2Many relation by bulk insert
+		_, err = tx.NewInsert().Model(&rels).Exec(ctx)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return err
 	}
@@ -76,7 +93,7 @@ func (r *PostRepository) Create(ctx context.Context, post *entity.Post) error {
 	return nil
 }
 
-func (r *PostRepository) Update(ctx context.Context, post *entity.Post) error {
+func (r *PostRepository) Update(ctx context.Context, post *entity.Post, tagIds []int64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -86,6 +103,25 @@ func (r *PostRepository) Update(ctx context.Context, post *entity.Post) error {
 	if err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	if len(tagIds) > 0 {
+		rels := make([]*entity.PostTags, 0, len(tagIds))
+		for _, tagId := range tagIds {
+			rels = append(rels, &entity.PostTags{
+				PostId: post.ID,
+				TagId:  tagId,
+			})
+		}
+
+		vals := tx.NewValues(&rels)
+
+		// Many2Many relation by bulk update
+		_, err = tx.NewUpdate().With("post_tags", vals).Model((*entity.PostTags)(nil)).Set("post_id = ?", "_data.post_id").Set("tag_id = ?", "_data.tag_id").Where("post_id = ?", "_data.post_id").Where("tag_id = ?", "_data.tag_id").Exec(ctx)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -102,6 +138,12 @@ func (r *PostRepository) Delete(ctx context.Context, id int64) error {
 	tx, _ := r.Conn.Begin()
 
 	_, err := tx.NewDelete().Model((*entity.Post)(nil)).Where("id = ?", id).Exec(ctx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.NewDelete().Model((*entity.PostTags)(nil)).Where("post_id = ?", id).Exec(ctx)
 	if err != nil {
 		tx.Rollback()
 		return err
